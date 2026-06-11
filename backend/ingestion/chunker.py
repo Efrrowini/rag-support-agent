@@ -4,8 +4,8 @@ from pathlib import Path
 def chunk_text(
     text: str,
     source: str,
-    chunk_size: int = 500,
-    overlap: int = 50,
+    chunk_size: int = 100,
+    overlap: int = 20,
 ) -> list[dict]:
     words = text.split()
     chunks = []
