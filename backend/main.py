@@ -1,8 +1,10 @@
+import json
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from backend.ingestion.pipeline import run_pipeline
 from backend.rag.engine import ask
+from backend.websocket.sentiment import score_message, check_escalation
 
 load_dotenv()
 
@@ -47,43 +49,69 @@ def ask_question(request: AskRequest):
 async def chat_endpoint(websocket: WebSocket, session_id: str):
     await websocket.accept()
 
-    # Initialize session history
     if session_id not in sessions:
-        sessions[session_id] = []
+        sessions[session_id] = {
+            "history": [],
+            "sentiment_scores": [],
+            "escalated": False,
+        }
 
+    session = sessions[session_id]
     print(f"[WS] Session connected: {session_id}")
 
     try:
         while True:
-            # Receive message from client
             user_message = await websocket.receive_text()
             print(f"[WS] [{session_id}] User: {user_message}")
 
-            # Append to session history
-            sessions[session_id].append({
+            # Block further messages if already escalated
+            if session["escalated"]:
+                await websocket.send_text(json.dumps({
+                    "type": "escalate",
+                    "answer": "You are already connected to a human agent.",
+                    "history": session["history"],
+                }))
+                continue
+
+            # Score sentiment
+            score = score_message(user_message)
+            session["sentiment_scores"].append(score)
+            print(f"[WS] Sentiment score: {score:.3f}")
+
+            # Append user message to history
+            session["history"].append({
                 "role": "user",
-                "content": user_message
+                "content": user_message,
+                "sentiment": score,
             })
+
+            # Check escalation
+            if check_escalation(session["sentiment_scores"], user_message):
+                session["escalated"] = True
+                print(f"[WS] ESCALATING session: {session_id}")
+                await websocket.send_text(json.dumps({
+                    "type": "escalate",
+                    "answer": "I'm connecting you to a human agent now. Please hold on.",
+                    "history": session["history"],
+                }))
+                continue
 
             # Get RAG response
             result = ask(user_message)
 
-            # Append bot reply to history
-            sessions[session_id].append({
+            session["history"].append({
                 "role": "assistant",
-                "content": result["answer"]
+                "content": result["answer"],
             })
 
-            # Send response back to client
-            import json
             await websocket.send_text(json.dumps({
                 "type": "message",
                 "answer": result["answer"],
                 "fallback": result["fallback"],
                 "source": result.get("source"),
+                "sentiment_score": round(score, 3),
                 "session_id": session_id,
             }))
 
     except WebSocketDisconnect:
         print(f"[WS] Session disconnected: {session_id}")
-        # Keep session history in memory after disconnect
