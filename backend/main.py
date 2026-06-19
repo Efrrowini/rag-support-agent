@@ -5,10 +5,18 @@ from dotenv import load_dotenv
 from backend.ingestion.pipeline import run_pipeline
 from backend.rag.engine import ask
 from backend.websocket.sentiment import score_message, check_escalation
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
 app = FastAPI(title="RAG Support Agent")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # In-memory session store
 sessions = {}
@@ -43,7 +51,25 @@ def ask_question(request: AskRequest):
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+@app.get("/sessions")
+def get_sessions():
+    escalated = {
+        sid: data for sid, data in sessions.items()
+        if data.get("escalated")
+    }
+    return {"escalated_sessions": escalated, "count": len(escalated)}
 
+
+@app.post("/agent-reply/{session_id}")
+async def agent_reply(session_id: str, request: AskRequest):
+    if session_id not in sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    sessions[session_id]["history"].append({
+        "role": "agent",
+        "content": request.question,
+    })
+    return {"status": "reply stored", "session_id": session_id}
 
 @app.websocket("/chat/{session_id}")
 async def chat_endpoint(websocket: WebSocket, session_id: str):
