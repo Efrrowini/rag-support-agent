@@ -76,6 +76,17 @@
       </div>
     </div>
   </div>
+  // Simple password gate
+const AGENT_PASSWORD = "vortexiq-agent-2026";
+const entered = localStorage.getItem("agent_auth");
+if (entered !== AGENT_PASSWORD) {
+  const pwd = prompt("Enter agent password:");
+  if (pwd !== AGENT_PASSWORD) {
+    document.body.innerHTML = "<div style='padding:40px;font-family:sans-serif;color:#DC2626'>Access denied. Refresh to try again.</div>";
+    throw new Error("Unauthorized");
+  }
+  localStorage.setItem("agent_auth", pwd);
+}
 
   <script>
     const BASE = "http://localhost:8000";

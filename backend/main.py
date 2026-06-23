@@ -8,6 +8,14 @@ from backend.rag.engine import ask
 from backend.websocket.sentiment import score_message, check_escalation
 
 load_dotenv()
+import sys
+import os
+# Validate required env vars on startup
+REQUIRED_ENV_VARS = ["GROQ_API_KEY", "CHROMA_DB_PATH"]
+missing = [v for v in REQUIRED_ENV_VARS if not os.getenv(v)]
+if missing:
+    print(f"[ERROR] Missing required environment variables: {', '.join(missing)}")
+    sys.exit(1)
 
 app = FastAPI(title="RAG Support Agent")
 
