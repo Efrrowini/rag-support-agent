@@ -30,7 +30,7 @@
 
   <script>
     const sessionId = "test-session-" + Math.random().toString(36).substr(2, 9);
-    const ws = new WebSocket(`ws://localhost:8000/chat/${sessionId}`);
+    const ws = new WebSocket(`wss://web-production-215bcf.up.railway.app/chat/${sessionId}`);
     const chat = document.getElementById("chat");
     const status = document.getElementById("status");
     const msgInput = document.getElementById("msg");
