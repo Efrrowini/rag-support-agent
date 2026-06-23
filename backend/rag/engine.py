@@ -10,7 +10,13 @@ from backend.rag.fallback import get_fallback_response
 SIMILARITY_THRESHOLD = float(os.getenv("SIMILARITY_THRESHOLD", "0.55"))
 MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+client = None
+
+def get_client():
+    global client
+    if client is None:
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    return client
 
 SYSTEM_PROMPT = """You are a customer support assistant for VortexIQ.
 You MUST answer ONLY using the context provided below.
@@ -52,7 +58,7 @@ def ask(question: str) -> dict:
 
     # Step 5 - Call Groq with error handling
     try:
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
             model=MODEL,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
