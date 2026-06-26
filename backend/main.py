@@ -1,6 +1,8 @@
 import json
 import os
 import sys
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -29,19 +31,17 @@ app.add_middleware(
 )
 
 
-@app.on_event("startup")
-async def startup_event():
+def startup_tasks():
     print("[STARTUP] Pre-loading embedding model...")
     from backend.ingestion.embedder import get_model
     get_model()
     print("[STARTUP] Embedding model ready.")
 
-    # Auto-ingest if ChromaDB is empty
     print("[STARTUP] Checking ChromaDB...")
     from backend.vectordb.store import get_collection
     col = get_collection()
     if col.count() == 0:
-        print("[STARTUP] ChromaDB empty — auto-ingesting documents...")
+        print("[STARTUP] ChromaDB empty — auto-ingesting...")
         data_dir = "data"
         if os.path.exists(data_dir):
             for filename in os.listdir(data_dir):
@@ -51,7 +51,14 @@ async def startup_event():
                     run_pipeline(source)
         print("[STARTUP] Auto-ingest complete.")
     else:
-        print(f"[STARTUP] ChromaDB has {col.count()} chunks — skipping ingest.")
+        print(f"[STARTUP] ChromaDB has {col.count()} chunks — skipping.")
+
+
+@app.on_event("startup")
+async def startup_event():
+    loop = asyncio.get_event_loop()
+    executor = ThreadPoolExecutor()
+    loop.run_in_executor(executor, startup_tasks)
 
 
 # In-memory stores
