@@ -2,6 +2,15 @@
 
 A conversational AI support agent built for VortexIQ as part of an AI Engineering internship project.
 
+## Live Demo
+
+| | URL |
+|---|---|
+| 💬 Chat UI | https://astonishing-dusk-bfbffd.netlify.app/index.html |
+| 👤 Agent Dashboard | https://astonishing-dusk-bfbffd.netlify.app/agent.html |
+| 🔌 API | https://web-production-215bcf.up.railway.app |
+| 📚 API Docs | https://web-production-215bcf.up.railway.app/docs |
+
 ## What it does
 
 - Ingests PDF and web documents into a vector database
