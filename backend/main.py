@@ -8,6 +8,12 @@ from backend.rag.engine import ask
 from backend.websocket.sentiment import score_message, check_escalation
 
 load_dotenv()
+@app.on_event("startup")
+async def startup_event():
+    print("[STARTUP] Pre-loading embedding model...")
+    from backend.ingestion.embedder import get_model
+    get_model()
+    print("[STARTUP] Embedding model ready.")
 import sys
 import os
 # Validate required env vars on startup
