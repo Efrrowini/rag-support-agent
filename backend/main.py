@@ -178,7 +178,7 @@ async def chat_endpoint(websocket: WebSocket, session_id: str):
                 }))
                 continue
 
-            result = ask(user_message)
+            result = ask(user_message, history=session["history"])
 
             session["history"].append({
                 "role": "assistant",

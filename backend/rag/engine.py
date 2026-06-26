@@ -7,7 +7,7 @@ from backend.ingestion.embedder import embed
 from backend.vectordb.store import query
 from backend.rag.fallback import get_fallback_response
 
-SIMILARITY_THRESHOLD = float(os.getenv("SIMILARITY_THRESHOLD", "0.55"))
+SIMILARITY_THRESHOLD = float(os.getenv("SIMILARITY_THRESHOLD", "0.80"))
 MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 
 client = None
@@ -29,20 +29,23 @@ LOG_PATH = "logs/rag.jsonl"
 
 
 def log_interaction(entry: dict):
-    with open(LOG_PATH, "a", encoding="utf-8") as f:
-        f.write(json.dumps(entry) + "\n")
+    try:
+        with open(LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception:
+        pass
 
 
-def ask(question: str) -> dict:
+def ask(question: str, history: list[dict] = None) -> dict:
     start = time.time()
 
-    # Step 1 - Embed the question
+    # Embed the question
     question_embedding = embed([question])[0]
 
-    # Step 2 - Retrieve relevant chunks
+    # Retrieve relevant chunks
     results = query(question_embedding, n=3)
 
-    # Step 3 - Check similarity threshold
+    # Check similarity threshold
     if not results or results[0]["score"] > SIMILARITY_THRESHOLD:
         entry = {
             "timestamp": datetime.utcnow().isoformat(),
@@ -53,16 +56,31 @@ def ask(question: str) -> dict:
         log_interaction(entry)
         return get_fallback_response()
 
-    # Step 4 - Build context
+    # Build context from retrieved chunks
     context = "\n\n".join([r["text"] for r in results])
 
-    # Step 5 - Call Groq with error handling
+    # Build conversation history string
+    history_text = ""
+    if history and len(history) > 0:
+        recent = history[-6:]  # last 3 exchanges
+        history_lines = []
+        for msg in recent:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            if role == "user":
+                history_lines.append(f"User: {content}")
+            elif role == "assistant":
+                history_lines.append(f"Assistant: {content}")
+        if history_lines:
+            history_text = "\n\nConversation history:\n" + "\n".join(history_lines)
+
+    # Call Groq
     try:
         response = get_client().chat.completions.create(
             model=MODEL,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"}
+                {"role": "user", "content": f"Context:\n{context}{history_text}\n\nQuestion: {question}"}
             ],
             max_tokens=300,
         )
@@ -85,7 +103,6 @@ def ask(question: str) -> dict:
 
     latency = round((time.time() - start) * 1000)
 
-    # Step 6 - Log interaction
     entry = {
         "timestamp": datetime.utcnow().isoformat(),
         "question": question,
