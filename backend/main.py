@@ -1,4 +1,6 @@
 import json
+import os
+import sys
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -8,14 +10,7 @@ from backend.rag.engine import ask
 from backend.websocket.sentiment import score_message, check_escalation
 
 load_dotenv()
-@app.on_event("startup")
-async def startup_event():
-    print("[STARTUP] Pre-loading embedding model...")
-    from backend.ingestion.embedder import get_model
-    get_model()
-    print("[STARTUP] Embedding model ready.")
-import sys
-import os
+
 # Validate required env vars on startup
 REQUIRED_ENV_VARS = ["GROQ_API_KEY", "CHROMA_DB_PATH"]
 missing = [v for v in REQUIRED_ENV_VARS if not os.getenv(v)]
@@ -33,9 +28,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.on_event("startup")
+async def startup_event():
+    print("[STARTUP] Pre-loading embedding model...")
+    from backend.ingestion.embedder import get_model
+    get_model()
+    print("[STARTUP] Embedding model ready.")
+
 # In-memory stores
 sessions = {}
-active_connections = {}  # session_id -> WebSocket
+active_connections = {}
 
 
 class IngestRequest(BaseModel):
@@ -88,7 +90,6 @@ async def agent_reply(session_id: str, request: AskRequest):
         "content": request.question,
     })
 
-    # Push reply to user in real time if still connected
     if session_id in active_connections:
         ws = active_connections[session_id]
         try:
@@ -130,7 +131,6 @@ async def chat_endpoint(websocket: WebSocket, session_id: str):
                 }))
                 continue
 
-            # Score sentiment
             score = score_message(user_message)
             session["sentiment_scores"].append(score)
 
@@ -140,10 +140,8 @@ async def chat_endpoint(websocket: WebSocket, session_id: str):
                 "sentiment": score,
             })
 
-            # Send typing indicator
             await websocket.send_text(json.dumps({"type": "typing"}))
 
-            # Check escalation
             if check_escalation(session["sentiment_scores"], user_message):
                 session["escalated"] = True
                 print(f"[WS] ESCALATING session: {session_id}")
@@ -154,7 +152,6 @@ async def chat_endpoint(websocket: WebSocket, session_id: str):
                 }))
                 continue
 
-            # Get RAG response
             result = ask(user_message)
 
             session["history"].append({
