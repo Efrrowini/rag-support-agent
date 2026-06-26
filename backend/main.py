@@ -28,12 +28,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.on_event("startup")
 async def startup_event():
     print("[STARTUP] Pre-loading embedding model...")
     from backend.ingestion.embedder import get_model
     get_model()
     print("[STARTUP] Embedding model ready.")
+
+    # Auto-ingest if ChromaDB is empty
+    print("[STARTUP] Checking ChromaDB...")
+    from backend.vectordb.store import get_collection
+    col = get_collection()
+    if col.count() == 0:
+        print("[STARTUP] ChromaDB empty — auto-ingesting documents...")
+        data_dir = "data"
+        if os.path.exists(data_dir):
+            for filename in os.listdir(data_dir):
+                if filename.endswith(".pdf"):
+                    source = os.path.join(data_dir, filename)
+                    print(f"[STARTUP] Ingesting: {source}")
+                    run_pipeline(source)
+        print("[STARTUP] Auto-ingest complete.")
+    else:
+        print(f"[STARTUP] ChromaDB has {col.count()} chunks — skipping ingest.")
+
 
 # In-memory stores
 sessions = {}
