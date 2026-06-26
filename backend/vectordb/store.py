@@ -4,18 +4,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = None
-collection = None
-
 def get_collection():
-    global client, collection
-    if collection is None:
-        db_path = os.getenv("CHROMA_DB_PATH", "./chroma_store")
-        client = chromadb.PersistentClient(path=db_path)
-        collection = client.get_or_create_collection(
-            name="support_docs",
-            metadata={"hnsw:space": "cosine"}
-        )
+    db_path = os.getenv("CHROMA_DB_PATH", "./chroma_store")
+    client = chromadb.PersistentClient(path=db_path)
+    collection = client.get_or_create_collection(
+        name="support_docs",
+        metadata={"hnsw:space": "cosine"}
+    )
     return collection
 
 
