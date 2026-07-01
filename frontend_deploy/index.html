@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>VortexIQ Support Chat — WS Test</title>
+  <title>VortexIQ Support Chat</title>
   <style>
     body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; background: #f5f5f5; }
     h2 { color: #333; }
@@ -21,7 +21,7 @@
 </head>
 <body>
   <h2>VortexIQ Support Chat</h2>
-  <div id="status">Connecting...</div>
+  <div id="status">Waking up server...</div>
   <div id="chat"></div>
   <div id="input-row">
     <input id="msg" type="text" placeholder="Ask a question..." disabled />
@@ -49,18 +49,29 @@
     }
 
     function connect() {
-      status.textContent = reconnectAttempts === 0 ? "Waking up server..." : "Reconnecting...";
+      status.textContent = "Waking up server...";
       status.style.color = "#BA7517";
       msgInput.disabled = true;
       sendBtn.disabled = true;
+      pollReady();
+    }
 
-      // Warm up via REST first
-      fetch(`${BACKEND}/health`)
-        .then(() => {
-          // Wait 2 seconds after health check before WS
-          setTimeout(openWebSocket, 5000);
+    function pollReady() {
+      fetch(`${BACKEND}/ready`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.ready) {
+            status.textContent = "Server ready — connecting...";
+            setTimeout(openWebSocket, 500);
+          } else {
+            status.textContent = "Server starting up...";
+            setTimeout(pollReady, 2000);
+          }
         })
-        .catch(() => setTimeout(openWebSocket, 5000));
+        .catch(() => {
+          status.textContent = "Waiting for server...";
+          setTimeout(pollReady, 3000);
+        });
     }
 
     function openWebSocket() {
@@ -119,9 +130,7 @@
         }
       };
 
-      ws.onerror = () => {
-        ws.close();
-      };
+      ws.onerror = () => { ws.close(); };
     }
 
     function sendMessage() {
@@ -136,8 +145,7 @@
     sendBtn.onclick = sendMessage;
     msgInput.onkeydown = (e) => { if (e.key === "Enter") sendMessage(); };
 
-    // Start connection
     connect();
-</script>
+  </script>
 </body>
 </html>
