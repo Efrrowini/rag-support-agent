@@ -145,5 +145,5 @@ rag-support-agent/
 
 ## Built by
 
-Efro — AI Engineering Intern, VortexIQ  
+Efrrowini — AI Engineering Intern, VortexIQ  
 GitHub: [Efrrowini](https://github.com/Efrrowini)
