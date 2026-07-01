@@ -30,6 +30,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Readiness flag
+is_ready = False
+
+# In-memory stores
+sessions = {}
+active_connections = {}
+
 
 def startup_tasks():
     print("[STARTUP] Pre-loading embedding model...")
@@ -53,17 +60,16 @@ def startup_tasks():
     else:
         print(f"[STARTUP] ChromaDB has {col.count()} chunks — skipping.")
 
+    global is_ready
+    is_ready = True
+    print("[STARTUP] Server is ready.")
+
 
 @app.on_event("startup")
 async def startup_event():
     loop = asyncio.get_event_loop()
     executor = ThreadPoolExecutor()
     loop.run_in_executor(executor, startup_tasks)
-
-
-# In-memory stores
-sessions = {}
-active_connections = {}
 
 
 class IngestRequest(BaseModel):
@@ -77,6 +83,11 @@ class AskRequest(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/ready")
+def ready():
+    return {"ready": is_ready, "status": "ok" if is_ready else "starting"}
 
 
 @app.post("/ingest")
