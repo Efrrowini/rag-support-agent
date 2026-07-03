@@ -1,151 +1,231 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>VortexIQ Support Chat</title>
-  <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; background: #f5f5f5; }
-    h2 { color: #333; }
-    #chat { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 16px; height: 400px; overflow-y: auto; margin-bottom: 12px; }
-    .user { text-align: right; margin: 8px 0; }
-    .user span { background: #4F46E5; color: white; padding: 8px 12px; border-radius: 12px 12px 2px 12px; display: inline-block; max-width: 80%; }
-    .bot { text-align: left; margin: 8px 0; }
-    .bot span { background: #E5E7EB; color: #111; padding: 8px 12px; border-radius: 12px 12px 12px 2px; display: inline-block; max-width: 80%; }
-    .fallback span { background: #FEF3C7; color: #92400E; }
-    #status { font-size: 12px; color: #6B7280; margin-bottom: 8px; }
-    #input-row { display: flex; gap: 8px; }
-    #msg { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
-    #send { padding: 10px 20px; background: #4F46E5; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
-    #send:disabled { background: #9CA3AF; cursor: not-allowed; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VortexIQ Support</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0f0f;
+    --surface:#111918;
+    --surface2:#162020;
+    --teal:#00c9a7;
+    --teal-dim:#00c9a720;
+    --teal-glow:0 0 24px #00c9a740;
+    --text:#e8f0ef;
+    --text-muted:#6b8a86;
+    --border:#1e2e2c;
+    --user-bubble:#00c9a7;
+    --bot-bubble:#162020;
+    --fallback-bg:#1a1500;
+    --fallback-border:#3a2e00;
+    --agent-bg:#0d1f1a;
+    --agent-border:#00c9a730;
+  }
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+  /* Header */
+  .header{padding:18px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);background:var(--surface)}
+  .avatar{width:36px;height:36px;border-radius:50%;background:var(--teal-dim);border:1.5px solid var(--teal);display:flex;align-items:center;justify-content:center;box-shadow:var(--teal-glow)}
+  .avatar svg{width:18px;height:18px;fill:var(--teal)}
+  .header-info h1{font-size:15px;font-weight:600;color:var(--text)}
+  .status-row{display:flex;align-items:center;gap:6px;margin-top:2px}
+  .status-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 6px var(--teal)}
+  .status-text{font-size:11px;color:var(--teal)}
+
+  /* Chat area */
+  #chat{flex:1;overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth}
+  #chat::-webkit-scrollbar{width:4px}
+  #chat::-webkit-scrollbar-track{background:transparent}
+  #chat::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+  /* Welcome */
+  .welcome{text-align:center;padding:32px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .welcome-icon{width:56px;height:56px;border-radius:50%;background:var(--teal-dim);border:1.5px solid var(--teal);display:flex;align-items:center;justify-content:center;box-shadow:var(--teal-glow);margin-bottom:4px}
+  .welcome-icon svg{width:28px;height:28px;fill:var(--teal)}
+  .welcome h2{font-size:18px;font-weight:600;color:var(--text)}
+  .welcome p{font-size:13px;color:var(--text-muted);max-width:260px;line-height:1.6}
+  .quick-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px}
+  .chip{font-size:12px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);color:var(--text-muted);background:var(--surface2);cursor:pointer;transition:all .2s}
+  .chip:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-dim)}
+
+  /* Messages */
+  .msg-row{display:flex;align-items:flex-end;gap:8px}
+  .msg-row.user{justify-content:flex-end}
+  .msg-row.bot{justify-content:flex-start}
+  .bot-avatar{width:28px;height:28px;border-radius:50%;background:var(--teal-dim);border:1px solid var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .bot-avatar svg{width:14px;height:14px;fill:var(--teal)}
+  .bubble{max-width:78%;padding:11px 15px;border-radius:18px;font-size:14px;line-height:1.6}
+  .msg-row.user .bubble{background:var(--teal);color:#000;border-radius:18px 18px 4px 18px;font-weight:500}
+  .msg-row.bot .bubble{background:var(--bot-bubble);color:var(--text);border-radius:18px 18px 18px 4px;border:1px solid var(--border)}
+  .msg-row.bot.fallback .bubble{background:var(--fallback-bg);border-color:var(--fallback-border);color:#d4a800}
+  .msg-row.bot.agent-msg .bubble{background:var(--agent-bg);border-color:var(--agent-border);color:var(--teal)}
+  .source{font-size:10px;color:var(--text-muted);margin-top:5px;padding-left:2px}
+
+  /* Typing */
+  .typing-bubble{background:var(--bot-bubble);border:1px solid var(--border);border-radius:18px 18px 18px 4px;padding:12px 16px;display:flex;gap:5px;align-items:center}
+  .typing-bubble span{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:bounce 1.2s infinite}
+  .typing-bubble span:nth-child(2){animation-delay:.2s}
+  .typing-bubble span:nth-child(3){animation-delay:.4s}
+  @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+
+  /* Escalation banner */
+  .escalation-banner{background:#0d1500;border:1px solid #2a3500;border-radius:12px;padding:14px 16px;text-align:center;font-size:13px;color:#c9a700;display:flex;align-items:center;justify-content:center;gap:8px}
+
+  /* Input bar */
+  .input-bar{padding:14px 16px;border-top:1px solid var(--border);background:var(--surface);display:flex;gap:10px;align-items:center}
+  #msg{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:24px;padding:11px 18px;font-size:14px;color:var(--text);outline:none;font-family:'Inter',sans-serif;transition:border-color .2s}
+  #msg::placeholder{color:var(--text-muted)}
+  #msg:focus{border-color:var(--teal)}
+  #msg:disabled{opacity:.4}
+  #send{width:42px;height:42px;border-radius:50%;background:var(--teal);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;box-shadow:var(--teal-glow)}
+  #send:hover{transform:scale(1.08)}
+  #send:disabled{background:var(--surface2);box-shadow:none;cursor:not-allowed}
+  #send svg{width:18px;height:18px;fill:#000}
+
+  /* Status bar */
+  #status-bar{font-size:11px;color:var(--text-muted);text-align:center;padding:6px 16px 0;background:var(--surface)}
+</style>
 </head>
 <body>
-  <h2>VortexIQ Support Chat</h2>
-  <div id="status">Waking up server...</div>
-  <div id="chat"></div>
-  <div id="input-row">
-    <input id="msg" type="text" placeholder="Ask a question..." disabled />
-    <button id="send" disabled>Send</button>
+
+<div class="header">
+  <div class="avatar">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
   </div>
+  <div class="header-info">
+    <h1>VortexIQ Support</h1>
+    <div class="status-row">
+      <div class="status-dot" id="status-dot"></div>
+      <span class="status-text" id="status-text">Connecting...</span>
+    </div>
+  </div>
+</div>
 
-  <script>
-    const BACKEND = "https://web-production-215bcf.up.railway.app";
-    const sessionId = "test-session-" + Math.random().toString(36).substr(2, 9);
-    const chat = document.getElementById("chat");
-    const status = document.getElementById("status");
-    const msgInput = document.getElementById("msg");
-    const sendBtn = document.getElementById("send");
-    let ws = null;
-    let typingEl = null;
-    let reconnectAttempts = 0;
+<div id="chat">
+  <div class="welcome" id="welcome">
+    <div class="welcome-icon">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+    </div>
+    <h2>Hi there! How can I help?</h2>
+    <p>Ask anything about VortexIQ — billing, API, troubleshooting, and more.</p>
+    <div class="quick-chips">
+      <div class="chip" onclick="sendChip('What are the pricing plans?')">Pricing plans</div>
+      <div class="chip" onclick="sendChip('How do I reset my password?')">Reset password</div>
+      <div class="chip" onclick="sendChip('What is the API rate limit?')">API limits</div>
+      <div class="chip" onclick="sendChip('How do I connect Slack?')">Slack setup</div>
+    </div>
+  </div>
+</div>
 
-    function addMessage(html, className) {
-      const div = document.createElement("div");
-      div.className = className;
-      div.innerHTML = html;
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
-      return div;
+<div id="status-bar"></div>
+
+<div class="input-bar">
+  <input id="msg" type="text" placeholder="Ask a question..." disabled />
+  <button id="send" disabled>
+    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+  </button>
+</div>
+
+<script>
+const BACKEND = "https://web-production-215bcf.up.railway.app";
+const sessionId = "test-session-" + Math.random().toString(36).substr(2,9);
+const chat = document.getElementById("chat");
+const msgInput = document.getElementById("msg");
+const sendBtn = document.getElementById("send");
+const statusText = document.getElementById("status-text");
+const statusDot = document.getElementById("status-dot");
+const statusBar = document.getElementById("status-bar");
+let ws = null, typingEl = null, reconnectAttempts = 0;
+
+function setStatus(text, color){
+  statusText.textContent = text;
+  statusText.style.color = color || "var(--teal)";
+  statusDot.style.background = color || "var(--teal)";
+  statusDot.style.boxShadow = color ? "none" : "0 0 6px var(--teal)";
+  statusBar.textContent = "";
+}
+
+function addMsg(html, classes){
+  const div = document.createElement("div");
+  div.className = "msg-row " + classes;
+  div.innerHTML = html;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+function botMsg(html, extra){
+  return addMsg(`<div class="bot-avatar"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg></div><div>${html}</div>`, "bot " + (extra||""));
+}
+
+function connect(){
+  setStatus("Waking up server...", "#6b8a86");
+  pollReady();
+}
+
+function pollReady(){
+  fetch(`${BACKEND}/ready`).then(r=>r.json()).then(d=>{
+    if(d.ready){ setStatus("Connecting...", "#6b8a86"); setTimeout(openWS, 400); }
+    else { setStatus("Starting up...", "#6b8a86"); setTimeout(pollReady, 2000); }
+  }).catch(()=>setTimeout(pollReady, 3000));
+}
+
+function openWS(){
+  ws = new WebSocket(`wss://web-production-215bcf.up.railway.app/chat/${sessionId}`);
+  ws.onopen = ()=>{
+    reconnectAttempts = 0;
+    setStatus("Online", "var(--teal)");
+    msgInput.disabled = false; sendBtn.disabled = false; msgInput.focus();
+  };
+  ws.onmessage = e=>{
+    const data = JSON.parse(e.data);
+    if(typingEl){ typingEl.remove(); typingEl = null; }
+    if(data.type === "typing"){
+      typingEl = botMsg(`<div class="typing-bubble"><span></span><span></span><span></span></div>`);
+    } else if(data.type === "escalate"){
+      const b = document.createElement("div");
+      b.className = "escalation-banner";
+      b.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="#c9a700"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>${data.answer}`;
+      chat.appendChild(b); chat.scrollTop = chat.scrollHeight;
+      msgInput.disabled = true; sendBtn.disabled = true;
+      msgInput.placeholder = "Connected to human agent...";
+      setStatus("Escalated to agent", "#c9a700");
+    } else if(data.type === "agent_message"){
+      botMsg(`<div class="bubble">👤 ${data.answer}</div>`, "agent-msg");
+    } else {
+      const src = data.source && !data.fallback ? `<div class="source">📄 ${data.source}</div>` : "";
+      botMsg(`<div class="bubble">${data.answer}${src}</div>`, data.fallback ? "fallback" : "");
     }
+    document.getElementById("welcome") && document.getElementById("welcome").remove();
+  };
+  ws.onclose = ()=>{
+    msgInput.disabled = true; sendBtn.disabled = true;
+    if(reconnectAttempts < 3){
+      reconnectAttempts++;
+      setStatus(`Reconnecting (${reconnectAttempts}/3)...`, "#6b8a86");
+      setTimeout(connect, 3000);
+    } else { setStatus("Connection lost — refresh to retry", "#ef4444"); }
+  };
+  ws.onerror = ()=>ws.close();
+}
 
-    function connect() {
-      status.textContent = "Waking up server...";
-      status.style.color = "#BA7517";
-      msgInput.disabled = true;
-      sendBtn.disabled = true;
-      pollReady();
-    }
+function sendMessage(){
+  const text = msgInput.value.trim();
+  if(!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+  document.getElementById("welcome") && document.getElementById("welcome").remove();
+  addMsg(`<div class="bubble">${text}</div>`, "user");
+  chat.scrollTop = chat.scrollHeight;
+  ws.send(text); msgInput.value = "";
+}
 
-    function pollReady() {
-      fetch(`${BACKEND}/ready`)
-        .then(r => r.json())
-        .then(data => {
-          if (data.ready) {
-            status.textContent = "Server ready — connecting...";
-            setTimeout(openWebSocket, 500);
-          } else {
-            status.textContent = "Server starting up...";
-            setTimeout(pollReady, 2000);
-          }
-        })
-        .catch(() => {
-          status.textContent = "Waiting for server...";
-          setTimeout(pollReady, 3000);
-        });
-    }
+function sendChip(text){ msgInput.value = text; sendMessage(); }
 
-    function openWebSocket() {
-      ws = new WebSocket(`wss://web-production-215bcf.up.railway.app/chat/${sessionId}`);
-
-      ws.onopen = () => {
-        reconnectAttempts = 0;
-        status.textContent = "Connected — Session: " + sessionId;
-        status.style.color = "#059669";
-        msgInput.disabled = false;
-        sendBtn.disabled = false;
-        msgInput.focus();
-      };
-
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (typingEl) { typingEl.remove(); typingEl = null; }
-
-        if (data.type === "typing") {
-          typingEl = addMessage(`<span style="color:#9CA3AF;font-style:italic">VortexIQ is typing...</span>`, "bot");
-
-        } else if (data.type === "escalate") {
-          const banner = document.createElement("div");
-          banner.style.cssText = "background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;padding:12px;margin:10px 0;text-align:center;font-size:13px;color:#92400E;font-weight:500;";
-          banner.innerHTML = "🔴 " + data.answer;
-          chat.appendChild(banner);
-          msgInput.disabled = true;
-          sendBtn.disabled = true;
-          msgInput.placeholder = "Chat ended — connected to human agent";
-          status.textContent = "Escalated to human agent";
-          status.style.color = "#DC2626";
-
-        } else if (data.type === "agent_message") {
-          addMessage(`<span style="background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7">👤 Agent: ${data.answer}</span>`, "bot");
-
-        } else {
-          let html = `<span>${data.answer}</span>`;
-          if (data.source && !data.fallback) {
-            html += `<div style="font-size:11px;color:#9CA3AF;margin-top:4px;padding-left:4px">📄 ${data.source}</div>`;
-          }
-          addMessage(html, "bot" + (data.fallback ? " fallback" : ""));
-        }
-      };
-
-      ws.onclose = () => {
-        msgInput.disabled = true;
-        sendBtn.disabled = true;
-        if (reconnectAttempts < 3) {
-          reconnectAttempts++;
-          status.textContent = `Disconnected — retrying (${reconnectAttempts}/3)...`;
-          status.style.color = "#BA7517";
-          setTimeout(connect, 3000);
-        } else {
-          status.textContent = "Connection failed — please refresh";
-          status.style.color = "#DC2626";
-        }
-      };
-
-      ws.onerror = () => { ws.close(); };
-    }
-
-    function sendMessage() {
-      const text = msgInput.value.trim();
-      if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
-      addMessage(`<span>${text}</span>`, "user");
-      chat.scrollTop = chat.scrollHeight;
-      ws.send(text);
-      msgInput.value = "";
-    }
-
-    sendBtn.onclick = sendMessage;
-    msgInput.onkeydown = (e) => { if (e.key === "Enter") sendMessage(); };
-
-    connect();
-  </script>
+sendBtn.onclick = sendMessage;
+msgInput.onkeydown = e=>{ if(e.key==="Enter") sendMessage(); };
+connect();
+</script>
 </body>
 </html>
