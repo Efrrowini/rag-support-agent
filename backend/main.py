@@ -3,10 +3,13 @@ import os
 import sys
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from backend.ingestion.pipeline import run_pipeline
 from backend.rag.engine import ask
 from backend.websocket.sentiment import score_message, check_escalation
@@ -20,7 +23,13 @@ if missing:
     print(f"[ERROR] Missing required environment variables: {', '.join(missing)}")
     sys.exit(1)
 
+# Rate limiter
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(title="RAG Support Agent")
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -100,9 +109,10 @@ def ingest(request: IngestRequest):
 
 
 @app.post("/ask")
-def ask_question(request: AskRequest):
+@limiter.limit("20/minute")
+def ask_question(request: Request, body: AskRequest):
     try:
-        result = ask(request.question)
+        result = ask(body.question)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

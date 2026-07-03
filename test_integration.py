@@ -1,5 +1,9 @@
 import pytest
 import requests
+import websocket
+import threading
+import time
+import json
 
 BASE_URL = "http://localhost:8000"
 
@@ -56,3 +60,38 @@ def test_sessions_endpoint():
     data = r.json()
     assert "escalated_sessions" in data
     assert "count" in data
+
+def test_websocket_chat():
+    import json
+    received = []
+    done = threading.Event()
+    session_id = "pytest-session-001"
+    ws_url = f"ws://localhost:8000/chat/{session_id}"
+
+    def on_message(ws, message):
+        data = json.loads(message)
+        received.append(data)
+        if data.get("type") == "message":
+            done.set()
+
+    def on_open(ws):
+        time.sleep(0.5)
+        ws.send("How do I reset my password?")
+
+    ws = websocket.WebSocketApp(
+        ws_url,
+        on_message=on_message,
+        on_open=on_open,
+    )
+
+    t = threading.Thread(target=ws.run_forever)
+    t.daemon = True
+    t.start()
+
+    done.wait(timeout=30)
+    ws.close()
+
+    message_events = [r for r in received if r.get("type") == "message"]
+    assert len(message_events) > 0, "No message reply received"
+    assert message_events[0]["fallback"] is False
+    assert len(message_events[0]["answer"]) > 10
