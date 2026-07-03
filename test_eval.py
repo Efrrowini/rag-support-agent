@@ -3,6 +3,7 @@ import requests
 BASE_URL = "http://localhost:8000"
 
 in_scope = [
+    # From sample.pdf — core support
     "How do I reset my password?",
     "What are the pricing plans?",
     "How do I invite a team member?",
@@ -13,6 +14,18 @@ in_scope = [
     "What happens after 5 failed login attempts?",
     "How do I export my data?",
     "How do I delete my account?",
+    # From api_reference.pdf
+    "What is the base URL for the VortexIQ API?",
+    "What HTTP status code means I exceeded the rate limit?",
+    "How do I create a new project using the API?",
+    "What SDK is available for Python?",
+    "How many API requests per hour does the Pro plan allow?",
+    # From troubleshooting.pdf
+    "What should I do if VortexIQ is loading slowly?",
+    "Why am I not receiving email notifications?",
+    "What file size limit does VortexIQ support for uploads?",
+    "How do I fix Jira sync issues?",
+    "Who do I contact for billing issues?",
 ]
 
 out_of_scope = [
@@ -24,7 +37,7 @@ out_of_scope = [
 ]
 
 print("=" * 60)
-print("EVALUATION SUITE")
+print("EVALUATION SUITE — 25 queries across 3 documents")
 print("=" * 60)
 
 passed = 0
@@ -59,7 +72,7 @@ for q in out_of_scope:
         print(f"       → should have triggered fallback, score: {data.get('top_score')}")
 
 print("\n" + "=" * 60)
-print(f"RESULTS: {passed}/15 passed | {failed} failed")
-rate = round(passed / 15 * 100)
+print(f"RESULTS: {passed}/25 passed | {failed} failed")
+rate = round(passed / 25 * 100)
 print(f"Pass rate: {rate}%")
 print("=" * 60)

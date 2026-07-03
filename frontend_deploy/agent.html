@@ -6,42 +6,59 @@
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:sans-serif;background:#F3F4F6;min-height:100vh}
-    .topbar{background:#1b1846;color:white;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+    .topbar{background:#1E1B4B;color:white;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
     .topbar h1{font-size:16px;font-weight:600}
+    .topbar-right{display:flex;align-items:center;gap:12px}
     .badge{background:#EF4444;color:white;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px}
-    .container{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 50px)}
+    .badge-resolved{background:#10B981}
+    .container{display:grid;grid-template-columns:300px 1fr;height:calc(100vh - 50px)}
     .sidebar{background:white;border-right:1px solid #E5E7EB;overflow-y:auto}
-    .sidebar-title{padding:14px 16px;font-size:12px;font-weight:600;color:#6B7280;border-bottom:1px solid #E5E7EB;text-transform:uppercase;letter-spacing:.5px}
-    .session-item{padding:14px 16px;border-bottom:1px solid #F3F4F6;cursor:pointer;transition:background .15s}
+    .sidebar-title{padding:14px 16px;font-size:12px;font-weight:600;color:#6B7280;border-bottom:1px solid #E5E7EB;text-transform:uppercase;letter-spacing:.5px;display:flex;justify-content:space-between;align-items:center}
+    .filter-btns{display:flex;gap:4px}
+    .filter-btn{font-size:10px;padding:2px 8px;border-radius:8px;border:1px solid #E5E7EB;background:white;cursor:pointer;color:#6B7280}
+    .filter-btn.active{background:#EEF2FF;color:#4F46E5;border-color:#4F46E5}
+    .session-item{padding:12px 16px;border-bottom:1px solid #F3F4F6;cursor:pointer;transition:background .15s;position:relative}
     .session-item:hover{background:#F9FAFB}
     .session-item.active{background:#EEF2FF;border-left:3px solid #4F46E5}
-    .session-id{font-size:12px;font-weight:500;color:#111;margin-bottom:4px}
-    .session-meta{font-size:11px;color:#6B7280}
+    .session-item.resolved{opacity:0.5}
+    .session-id{font-size:12px;font-weight:500;color:#111;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .session-meta{font-size:11px;color:#6B7280;display:flex;justify-content:space-between}
+    .sentiment-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+    .neg{background:#EF4444}
+    .neu{background:#F59E0B}
+    .pos{background:#10B981}
     .no-sessions{padding:24px 16px;text-align:center;color:#9CA3AF;font-size:13px}
     .main{display:flex;flex-direction:column;height:100%}
-    .main-header{padding:16px 20px;background:white;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;justify-content:space-between}
-    .main-header h2{font-size:14px;font-weight:600;color:#111}
-    .main-header span{font-size:12px;color:#6B7280}
-    .chat-area{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
-    .empty-state{flex:1;display:flex;align-items:center;justify-content:center;color:#9CA3AF;font-size:14px;flex-direction:column;gap:8px}
-    .msg{max-width:70%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5}
+    .main-header{padding:14px 20px;background:white;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;justify-content:space-between}
+    .main-header-left h2{font-size:14px;font-weight:600;color:#111}
+    .main-header-left span{font-size:12px;color:#6B7280}
+    .header-actions{display:flex;gap:8px}
+    .btn-resolve{font-size:12px;padding:6px 14px;border-radius:8px;border:none;background:#10B981;color:white;cursor:pointer;font-weight:500}
+    .btn-resolve:hover{background:#059669}
+    .btn-resolve:disabled{background:#D1D5DB;cursor:not-allowed}
+    .chat-area{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px;background:#F9FAFB}
+    .empty-state{flex:1;display:flex;align-items:center;justify-content:center;color:#9CA3AF;font-size:14px;flex-direction:column;gap:8px;background:#F9FAFB}
+    .msg-wrapper{display:flex;flex-direction:column}
+    .msg-label{font-size:10px;color:#9CA3AF;margin-bottom:3px;padding:0 4px;display:flex;align-items:center;gap:6px}
     .msg-row{display:flex}
     .msg-row.user{justify-content:flex-end}
-    .msg-row.user .msg{background:#4F46E5;color:white;border-radius:12px 12px 2px 12px}
     .msg-row.assistant{justify-content:flex-start}
-    .msg-row.assistant .msg{background:#F3F4F6;color:#111;border-radius:12px 12px 12px 2px}
     .msg-row.agent{justify-content:flex-start}
+    .msg{max-width:70%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5}
+    .msg-row.user .msg{background:#4F46E5;color:white;border-radius:12px 12px 2px 12px}
+    .msg-row.assistant .msg{background:white;color:#111;border-radius:12px 12px 12px 2px;border:1px solid #E5E7EB}
     .msg-row.agent .msg{background:#D1FAE5;color:#065F46;border-radius:12px 12px 12px 2px;border:1px solid #6EE7B7}
-    .msg-label{font-size:10px;color:#9CA3AF;margin-bottom:3px;padding:0 4px}
+    .sentiment-badge{font-size:10px;padding:1px 6px;border-radius:6px;font-weight:500}
+    .sent-neg{background:#FEE2E2;color:#991B1B}
+    .sent-neu{background:#FEF3C7;color:#92400E}
+    .sent-pos{background:#D1FAE5;color:#065F46}
     .reply-bar{padding:14px 20px;background:white;border-top:1px solid #E5E7EB;display:flex;gap:10px}
     .reply-bar input{flex:1;padding:10px 14px;border:1px solid #D1D5DB;border-radius:8px;font-size:13px;outline:none}
     .reply-bar input:focus{border-color:#4F46E5}
     .reply-bar button{padding:10px 20px;background:#059669;color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500}
-    .reply-bar button:hover{background:#047857}
     .reply-bar button:disabled{background:#9CA3AF;cursor:not-allowed}
+    .resolved-banner{background:#D1FAE5;border:1px solid #6EE7B7;border-radius:8px;padding:10px 14px;text-align:center;font-size:13px;color:#065F46;font-weight:500;margin:12px 20px 0}
     .refresh-btn{font-size:12px;padding:5px 12px;background:#EEF2FF;color:#4F46E5;border:none;border-radius:6px;cursor:pointer}
-    .sentiment{font-size:10px;padding:1px 6px;border-radius:6px;margin-left:6px;vertical-align:middle}
-    .neg{background:#FEE2E2;color:#991B1B}
   </style>
 </head>
 <body>
@@ -50,24 +67,40 @@
       <h1>VortexIQ Agent Dashboard</h1>
       <span class="badge" id="count-badge">0</span>
     </div>
-    <button class="refresh-btn" onclick="loadSessions()">Refresh</button>
+    <div class="topbar-right">
+      <span style="font-size:12px;color:#9CA3AF" id="last-refresh"></span>
+      <button class="refresh-btn" onclick="loadSessions()">Refresh</button>
+    </div>
   </div>
 
   <div class="container">
     <div class="sidebar">
-      <div class="sidebar-title">Escalated Sessions</div>
+      <div class="sidebar-title">
+        Escalated Sessions
+        <div class="filter-btns">
+          <button class="filter-btn active" id="filter-all" onclick="setFilter('all')">All</button>
+          <button class="filter-btn" id="filter-open" onclick="setFilter('open')">Open</button>
+          <button class="filter-btn" id="filter-resolved" onclick="setFilter('resolved')">Resolved</button>
+        </div>
+      </div>
       <div id="session-list"><div class="no-sessions">No escalated sessions yet</div></div>
     </div>
 
     <div class="main">
       <div class="main-header">
-        <h2 id="main-title">Select a session</h2>
-        <span id="main-meta"></span>
+        <div class="main-header-left">
+          <h2 id="main-title">Select a session</h2>
+          <span id="main-meta"></span>
+        </div>
+        <div class="header-actions">
+          <button class="btn-resolve" id="resolve-btn" disabled onclick="resolveSession()">Mark Resolved</button>
+        </div>
       </div>
       <div class="chat-area" id="chat-area">
         <div class="empty-state">
-          <div>👈 Select an escalated session from the sidebar</div>
-          <div style="font-size:12px">Click Refresh to load new escalations</div>
+          <div style="font-size:32px">👈</div>
+          <div>Select an escalated session from the sidebar</div>
+          <div style="font-size:12px">Auto-refreshes every 5 seconds</div>
         </div>
       </div>
       <div class="reply-bar">
@@ -76,93 +109,156 @@
       </div>
     </div>
   </div>
-  // Simple password gate
-const AGENT_PASSWORD = "vortexiq-agent-2026";
-const entered = localStorage.getItem("agent_auth");
-if (entered !== AGENT_PASSWORD) {
-  const pwd = prompt("Enter agent password:");
-  if (pwd !== AGENT_PASSWORD) {
-    document.body.innerHTML = "<div style='padding:40px;font-family:sans-serif;color:#DC2626'>Access denied. Refresh to try again.</div>";
-    throw new Error("Unauthorized");
-  }
-  localStorage.setItem("agent_auth", pwd);
-}
 
   <script>
     const BASE = "https://web-production-215bcf.up.railway.app";
     let currentSession = null;
     let allSessions = {};
+    let resolvedSessions = new Set(JSON.parse(localStorage.getItem("resolved_sessions") || "[]"));
+    let currentFilter = "all";
+
+    // Simple password gate
+    const AGENT_PASSWORD = "vortexiq-agent-2026";
+    const entered = localStorage.getItem("agent_auth");
+    if (entered !== AGENT_PASSWORD) {
+      const pwd = prompt("Enter agent password:");
+      if (pwd !== AGENT_PASSWORD) {
+        document.body.innerHTML = "<div style='padding:40px;font-family:sans-serif;color:#DC2626;font-size:18px'>Access denied. Refresh to try again.</div>";
+        throw new Error("Unauthorized");
+      }
+      localStorage.setItem("agent_auth", pwd);
+    }
+
+    function setFilter(f) {
+      currentFilter = f;
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("filter-" + f).classList.add("active");
+      renderSessionList();
+    }
+
+    function getSentimentClass(score) {
+      if (score === undefined) return "";
+      if (score < -0.2) return "neg";
+      if (score > 0.2) return "pos";
+      return "neu";
+    }
+
+    function getSentimentBadge(score) {
+      if (score === undefined) return "";
+      const cls = score < -0.2 ? "sent-neg" : score > 0.2 ? "sent-pos" : "sent-neu";
+      const label = score < -0.2 ? "😠 " + score.toFixed(2) : score > 0.2 ? "😊 " + score.toFixed(2) : "😐 " + score.toFixed(2);
+      return `<span class="sentiment-badge ${cls}">${label}</span>`;
+    }
 
     async function loadSessions() {
-      const res = await fetch(`${BASE}/sessions`);
-      const data = await res.json();
-      allSessions = data.escalated_sessions || {};
-      const count = data.count || 0;
+      try {
+        const res = await fetch(`${BASE}/sessions`);
+        const data = await res.json();
+        allSessions = data.escalated_sessions || {};
+        document.getElementById("last-refresh").textContent = "Updated " + new Date().toLocaleTimeString();
+        renderSessionList();
+        if (currentSession && allSessions[currentSession]) {
+          renderChat(currentSession);
+        }
+      } catch(e) {
+        console.error("Failed to load sessions", e);
+      }
+    }
 
-      document.getElementById("count-badge").textContent = count;
+    function renderSessionList() {
       const list = document.getElementById("session-list");
+      const entries = Object.entries(allSessions).filter(([sid]) => {
+        if (currentFilter === "resolved") return resolvedSessions.has(sid);
+        if (currentFilter === "open") return !resolvedSessions.has(sid);
+        return true;
+      });
 
-      if (count === 0) {
-        list.innerHTML = '<div class="no-sessions">No escalated sessions yet</div>';
+      const openCount = Object.keys(allSessions).filter(s => !resolvedSessions.has(s)).length;
+      document.getElementById("count-badge").textContent = openCount;
+
+      if (entries.length === 0) {
+        list.innerHTML = `<div class="no-sessions">No ${currentFilter === "all" ? "" : currentFilter + " "}sessions</div>`;
         return;
       }
 
-      list.innerHTML = Object.entries(allSessions).map(([sid, session]) => `
-        <div class="session-item ${sid === currentSession ? 'active' : ''}" onclick="selectSession('${sid}')">
+      list.innerHTML = entries.map(([sid, session]) => {
+        const isResolved = resolvedSessions.has(sid);
+        const msgCount = session.history.length;
+        const negCount = session.history.filter(m => m.sentiment !== undefined && m.sentiment < -0.2).length;
+        const dotClass = negCount > 0 ? "neg" : "pos";
+        return `<div class="session-item ${sid === currentSession ? 'active' : ''} ${isResolved ? 'resolved' : ''}" onclick="selectSession('${sid}', event)">
           <div class="session-id">${sid}</div>
-          <div class="session-meta">${session.history.length} messages</div>
-        </div>
-      `).join("");
+          <div class="session-meta">
+            <span><span class="sentiment-dot ${dotClass}"></span>${msgCount} messages</span>
+            <span>${isResolved ? '✓ Resolved' : negCount + ' negative'}</span>
+          </div>
+        </div>`;
+      }).join("");
     }
 
-    function selectSession(sid) {
+    function selectSession(sid, event) {
       currentSession = sid;
+      renderSessionList();
+      renderChat(sid);
+      const isResolved = resolvedSessions.has(sid);
+      document.getElementById("reply-input").disabled = isResolved;
+      document.getElementById("reply-btn").disabled = isResolved;
+      document.getElementById("resolve-btn").disabled = isResolved;
+    }
+
+    function renderChat(sid) {
       const session = allSessions[sid];
+      if (!session) return;
       document.getElementById("main-title").textContent = sid;
       document.getElementById("main-meta").textContent = session.history.length + " messages";
-      document.getElementById("reply-input").disabled = false;
-      document.getElementById("reply-btn").disabled = false;
-
       const area = document.getElementById("chat-area");
-      area.innerHTML = session.history.map(msg => {
-        const sentimentBadge = msg.sentiment !== undefined && msg.sentiment < -0.3
-          ? `<span class="sentiment neg">😠 ${msg.sentiment.toFixed(2)}</span>` : "";
-        return `
-          <div>
-            <div class="msg-label">${msg.role}${sentimentBadge}</div>
-            <div class="msg-row ${msg.role}">
-              <div class="msg">${msg.content}</div>
-            </div>
-          </div>`;
-      }).join("");
-      area.scrollTop = area.scrollHeight;
+      const isResolved = resolvedSessions.has(sid);
 
-      // Highlight active session
-      document.querySelectorAll(".session-item").forEach(el => el.classList.remove("active"));
-      event.currentTarget.classList.add("active");
+      let html = isResolved ? `<div class="resolved-banner">✓ This session has been resolved</div>` : "";
+
+      html += session.history.map(msg => {
+        const sentBadge = msg.role === "user" ? getSentimentBadge(msg.sentiment) : "";
+        return `<div class="msg-wrapper">
+          <div class="msg-label">${msg.role} ${sentBadge}</div>
+          <div class="msg-row ${msg.role}">
+            <div class="msg">${msg.content}</div>
+          </div>
+        </div>`;
+      }).join("");
+
+      area.innerHTML = html;
+      area.scrollTop = area.scrollHeight;
     }
 
     async function sendReply() {
       const input = document.getElementById("reply-input");
       const text = input.value.trim();
       if (!text || !currentSession) return;
-
       await fetch(`${BASE}/agent-reply/${currentSession}`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({"question": text})
       });
-
       input.value = "";
       await loadSessions();
-      selectSession(currentSession);
+      if (currentSession) renderChat(currentSession);
+    }
+
+    function resolveSession() {
+      if (!currentSession) return;
+      resolvedSessions.add(currentSession);
+      localStorage.setItem("resolved_sessions", JSON.stringify([...resolvedSessions]));
+      document.getElementById("reply-input").disabled = true;
+      document.getElementById("reply-btn").disabled = true;
+      document.getElementById("resolve-btn").disabled = true;
+      renderSessionList();
+      renderChat(currentSession);
     }
 
     document.getElementById("reply-input").onkeydown = (e) => {
       if (e.key === "Enter") sendReply();
     };
 
-    // Auto-refresh every 5 seconds
     loadSessions();
     setInterval(loadSessions, 5000);
   </script>
