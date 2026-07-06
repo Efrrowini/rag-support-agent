@@ -1,3 +1,4 @@
+import time
 import requests
 
 BASE_URL = "http://localhost:8000"
@@ -46,6 +47,7 @@ failed = 0
 print("\n--- IN-SCOPE QUERIES (expect fallback: false) ---\n")
 for q in in_scope:
     r = requests.post(f"{BASE_URL}/ask", json={"question": q})
+    time.sleep(0.5)
     data = r.json()
     is_pass = not data.get("fallback", True)
     status = "PASS" if is_pass else "FAIL"
@@ -60,6 +62,7 @@ for q in in_scope:
 print("\n--- OUT-OF-SCOPE QUERIES (expect fallback: true) ---\n")
 for q in out_of_scope:
     r = requests.post(f"{BASE_URL}/ask", json={"question": q})
+    time.sleep(0.5)
     data = r.json()
     is_pass = data.get("fallback", False)
     status = "PASS" if is_pass else "FAIL"
