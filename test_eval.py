@@ -27,6 +27,18 @@ in_scope = [
     "What file size limit does VortexIQ support for uploads?",
     "How do I fix Jira sync issues?",
     "Who do I contact for billing issues?",
+    # From security_compliance.pdf
+    "Is VortexIQ SOC 2 certified?",
+    "How is data encrypted in VortexIQ?",
+    "How do I report a security vulnerability?",
+    "Does VortexIQ comply with GDPR?",
+    "How long are audit logs retained?",
+    # From onboarding_guide.pdf
+    "How do I rename my workspace?",
+    "How many team members can I invite at once?",
+    "How do I set up Slack during onboarding?",
+    "Where can I find VortexIQ training videos?",
+    "How do I create my first project?",
 ]
 
 out_of_scope = [
@@ -38,7 +50,7 @@ out_of_scope = [
 ]
 
 print("=" * 60)
-print("EVALUATION SUITE — 25 queries across 3 documents")
+print("EVALUATION SUITE — 35 queries across 5 documents")
 print("=" * 60)
 
 passed = 0
@@ -47,7 +59,7 @@ failed = 0
 print("\n--- IN-SCOPE QUERIES (expect fallback: false) ---\n")
 for q in in_scope:
     r = requests.post(f"{BASE_URL}/ask", json={"question": q})
-    time.sleep(0.5)
+    time.sleep(1.0)
     data = r.json()
     is_pass = not data.get("fallback", True)
     status = "PASS" if is_pass else "FAIL"
@@ -62,7 +74,7 @@ for q in in_scope:
 print("\n--- OUT-OF-SCOPE QUERIES (expect fallback: true) ---\n")
 for q in out_of_scope:
     r = requests.post(f"{BASE_URL}/ask", json={"question": q})
-    time.sleep(0.5)
+    time.sleep(1.0)
     data = r.json()
     is_pass = data.get("fallback", False)
     status = "PASS" if is_pass else "FAIL"
@@ -75,7 +87,7 @@ for q in out_of_scope:
         print(f"       → should have triggered fallback, score: {data.get('top_score')}")
 
 print("\n" + "=" * 60)
-print(f"RESULTS: {passed}/25 passed | {failed} failed")
-rate = round(passed / 25 * 100)
+print(f"RESULTS: {passed}/35 passed | {failed} failed")
+rate = round(passed / 35 * 100)
 print(f"Pass rate: {rate}%")
 print("=" * 60)

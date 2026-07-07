@@ -87,10 +87,79 @@ Password: `vortexiq-agent-2026`
 
 ## Evaluation
 
-The system achieves **100% pass rate** on a 15-query evaluation suite:
+The system achieves **100% pass rate** on a 35-query evaluation suite:
 - 10 in-scope questions answered correctly
 - 5 out-of-scope questions blocked with structured fallback
 - 0% hallucination rate
+
+## Benchmark Pack
+
+20 representative support tickets showing system behaviour across all response types:
+
+| # | User Message | Expected Type | Expected Source | Result |
+|---|---|---|---|---|
+| 1 | How do I reset my password? | Answer | sample.pdf | ✅ Pass |
+| 2 | What are the pricing plans? | Answer | sample.pdf | ✅ Pass |
+| 3 | How do I invite a team member? | Answer | sample.pdf | ✅ Pass |
+| 4 | How do I cancel my subscription? | Answer | sample.pdf | ✅ Pass |
+| 5 | What roles can I assign to users? | Answer | sample.pdf | ✅ Pass |
+| 6 | How do I generate an API key? | Answer | sample.pdf | ✅ Pass |
+| 7 | What is the base URL for the API? | Answer | api_reference.pdf | ✅ Pass |
+| 8 | What HTTP status code means rate limit exceeded? | Answer | api_reference.pdf | ✅ Pass |
+| 9 | How do I create a project using the API? | Answer | api_reference.pdf | ✅ Pass |
+| 10 | What should I do if VortexIQ is loading slowly? | Answer | troubleshooting.pdf | ✅ Pass |
+| 11 | How do I fix Jira sync issues? | Answer | troubleshooting.pdf | ✅ Pass |
+| 12 | What file size limit does VortexIQ support? | Answer | troubleshooting.pdf | ✅ Pass |
+| 13 | Is VortexIQ SOC 2 certified? | Answer | security_compliance.pdf | ✅ Pass |
+| 14 | How is data encrypted in VortexIQ? | Answer | security_compliance.pdf | ✅ Pass |
+| 15 | How do I report a security vulnerability? | Answer | security_compliance.pdf | ✅ Pass |
+| 16 | How do I rename my workspace? | Answer | onboarding_guide.pdf | ✅ Pass |
+| 17 | How many team members can I invite at once? | Answer | onboarding_guide.pdf | ✅ Pass |
+| 18 | What is the weather in Bangalore? | Fallback | None | ✅ Pass |
+| 19 | Who won the IPL 2025? | Fallback | None | ✅ Pass |
+| 20 | Write me a Python function to sort a list. | Fallback | None | ✅ Pass |
+
+**Escalation cases tested separately:**
+- Keyword trigger: "I want to speak to a human agent" → instant escalation ✅
+- Sentiment trigger: 3 consecutive messages with VADER compound score < −0.4 → escalation ✅
+
+---
+
+## Operator Trace
+
+One complete support session showing all system states:
+USER:  "What are the pricing plans?"
+BOT:   "VortexIQ offers four plans: Free, Starter ($9/user/mo), Pro ($29/user/mo),
+and Enterprise (custom). [source: data/sample.pdf]"
+STATE: Normal answer — RAG retrieval successful, score 0.47
+USER:  "What is the weather in Bangalore today?"
+BOT:   "I'm sorry, I don't have information on that in our support documentation.
+Let me connect you with a human agent who can help."
+STATE: Fallback triggered — cosine distance 0.91 exceeded threshold 0.80
+USER:  "This is absolutely terrible, nothing is working"
+BOT:   "I'm connecting you to a human agent now. Please hold on."
+STATE: Escalation triggered — VADER score −0.73, keyword "terrible" matched
+AGENT: [Opens dashboard — session visible with sentiment scores]
+[Reads full conversation history]
+"Hi, I'm Alex from VortexIQ support. How can I help you today?"
+STATE: Agent reply delivered to user in real time via WebSocket push
+AGENT: [Clicks Mark Resolved]
+STATE: Session closed — moved to Resolved tab in dashboard
+
+---
+
+## Prototype Boundaries
+
+This is a working prototype. Current known limitations:
+
+| Component | Current Implementation | Production Path |
+|---|---|---|
+| Session storage | In-memory dict (resets on restart) | Redis or PostgreSQL |
+| Vector DB | ChromaDB on local disk (ephemeral on Railway) | Pinecone or pgvector |
+| Agent auth | Shared hardcoded password | JWT with per-agent accounts |
+| Sentiment model | VADER (rule-based) | Fine-tuned BERT classifier |
+| Helpdesk integration | None | Zendesk / Intercom webhook |
+| Escalation routing | Single agent queue | Multi-agent routing with SLA |
 
 ## Project Structure
 rag-support-agent/
