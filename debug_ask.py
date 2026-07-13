@@ -1,10 +1,29 @@
-from dotenv import load_dotenv
-load_dotenv()
-from backend.rag.engine import ask, SIMILARITY_THRESHOLD
+import requests
+import time
 
-print(f"Threshold in engine: {SIMILARITY_THRESHOLD}")
+BASE_URL = "https://web-production-215bcf.up.railway.app"
 
-result = ask("What is the weather in Bangalore?")
-print(f"Fallback: {result['fallback']}")
-print(f"Score: {result.get('top_score')}")
-print(f"Answer: {result.get('answer')[:100]}")
+queries = [
+    ("How do I reset my password?", False),
+    ("What are the pricing plans?", False),
+    ("Is VortexIQ SOC 2 certified?", False),
+    ("What HTTP status code means rate limit exceeded?", False),
+    ("How do I rename my workspace?", False),
+    ("What is the weather in Bangalore?", True),
+    ("Tell me a joke.", True),
+]
+
+print("Live server spot check — 7 queries")
+print("=" * 50)
+passed = 0
+
+for q, expect_fallback in queries:
+    r = requests.post(f"{BASE_URL}/ask", json={"question": q})
+    time.sleep(1.5)
+    data = r.json()
+    ok = data.get("fallback", False) == expect_fallback
+    print(f"[{'PASS' if ok else 'FAIL'}] {q[:55]}")
+    if ok:
+        passed += 1
+
+print(f"\nLive server: {passed}/7 passed")
