@@ -55,8 +55,9 @@ def startup_tasks():
 
     print("[STARTUP] Checking ChromaDB...")
     from backend.vectordb.store import get_collection
-    col = get_collection()
-    if col.count() == 0:
+    # NEW
+    from backend.vectordb.store import count
+    if count() == 0:
         print("[STARTUP] ChromaDB empty — auto-ingesting...")
         data_dir = "data"
         if os.path.exists(data_dir):
