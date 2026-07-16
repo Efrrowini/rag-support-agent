@@ -225,3 +225,4 @@ rag-support-agent/
 
 Efrrowini — AI Engineering Intern, VortexIQ
 GitHub: [Efrrowini](https://github.com/Efrrowini)
+📝 LinkedIn Post | https://www.linkedin.com/posts/efrrowini_aiengineering-rag-machinelearning-share-7483485289756270592-LtZS/ 
