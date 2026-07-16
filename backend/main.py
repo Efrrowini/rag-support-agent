@@ -17,7 +17,7 @@ from backend.websocket.sentiment import score_message, check_escalation
 load_dotenv()
 
 # Validate required env vars on startup
-REQUIRED_ENV_VARS = ["GROQ_API_KEY", "QDRANT_URL", "QDRANT_API_KEY"]
+REQUIRED_ENV_VARS = ["GROQ_API_KEY", "CHROMA_DB_PATH"]
 missing = [v for v in REQUIRED_ENV_VARS if not os.getenv(v)]
 if missing:
     print(f"[ERROR] Missing required environment variables: {', '.join(missing)}")
@@ -53,11 +53,12 @@ def startup_tasks():
     get_model()
     print("[STARTUP] Embedding model ready.")
 
-    print("[STARTUP] Checking Qdrant collection...")
+    print("[STARTUP] Checking ChromaDB...")
+    from backend.vectordb.store import get_collection
+    # NEW
     from backend.vectordb.store import count
-    chunk_count = count()
-    if chunk_count == 0:
-        print("[STARTUP] Qdrant empty — auto-ingesting...")
+    if count() == 0:
+        print("[STARTUP] ChromaDB empty — auto-ingesting...")
         data_dir = "data"
         if os.path.exists(data_dir):
             for filename in os.listdir(data_dir):
@@ -67,7 +68,7 @@ def startup_tasks():
                     run_pipeline(source)
         print("[STARTUP] Auto-ingest complete.")
     else:
-        print(f"[STARTUP] Qdrant has {chunk_count} chunks — skipping.")
+        print(f"[STARTUP] ChromaDB has {col.count()} chunks — skipping.")
 
     global is_ready
     is_ready = True
