@@ -1,7 +1,7 @@
 from backend.ingestion.embedder import embed
 from backend.vectordb.store import query
 
-q = "How do I generate an API key?"
+q = "What does the Pro plan include?"
 embedding = embed([q])[0]
 results = query(embedding, n=3)
 

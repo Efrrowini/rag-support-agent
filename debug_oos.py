@@ -8,6 +8,7 @@ questions = [
     "Who won the IPL 2025?",
     "Write me a Python function to sort a list.",
     "What is the capital of France?",
+    "Tell me a joke.",
 ]
 
 for q in questions:
